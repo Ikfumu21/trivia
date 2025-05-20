@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ca">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Trivia de Països</title>
   <style>
     body {
@@ -11,14 +11,26 @@
       background-color: #f4f4f4;
       padding: 20px;
     }
+
     #game-container {
       background: white;
       padding: 20px;
-      max-width: 500px;
+      max-width: 600px;
       margin: auto;
       border-radius: 10px;
       box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+      position: relative;
     }
+
+    #current-score {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      font-weight: bold;
+      color: green;
+      font-size: 18px;
+    }
+
     button {
       background-color: #007bff;
       color: white;
@@ -28,29 +40,50 @@
       cursor: pointer;
       border-radius: 5px;
     }
+
     button:hover {
       background-color: #0056b3;
     }
-    #scoreboard {
-      margin-top: 20px;
-      text-align: left;
-    }
+
     #timer {
       font-size: 18px;
       font-weight: bold;
       margin-bottom: 10px;
       color: red;
     }
+
     #hint {
       background-color: #ffa500;
     }
+
     #hint:hover {
       background-color: #cc8400;
+    }
+
+    #scoreboard {
+      margin-top: 30px;
+      text-align: center;
+    }
+
+    table {
+      margin: auto;
+      border-collapse: collapse;
+      width: 80%;
+    }
+
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+    }
+
+    th {
+      background-color: #eee;
     }
   </style>
 </head>
 <body>
   <div id="game-container">
+    <div id="current-score">Puntuació: 0</div>
     <h2>Trivia de Països</h2>
     <p id="difficulty"></p>
     <p id="question">Carregant pregunta...</p>
@@ -60,17 +93,24 @@
     <div id="answers"></div>
     <p id="result"></p>
     <button onclick="nextQuestion()">Següent pregunta</button>
-    <p>Puntuació: <span id="score">0</span></p>
+  </div>
+
+  <div id="scoreboard">
     <h3>Taula de classificació</h3>
-    <ul id="scoreboard"></ul>
+    <table>
+      <thead>
+        <tr>
+          <th>Nom</th>
+          <th>Puntuació</th>
+        </tr>
+      </thead>
+      <tbody id="score-rows"></tbody>
+    </table>
+    <button onclick="canviarUsuari()">Canviar d'usuari</button>
   </div>
 
   <script>
     let nomUsuari = "";
-    while (!nomUsuari) {
-      nomUsuari = prompt("Escriu el teu nom per començar:");
-    }
-
     const preguntes = [
       { pregunta: "Quin és el país més gran del món?", opcions: ["Canadà", "Xina", "Rússia", "Estats Units"], correcta: 2, pista: "Està entre Europa i Àsia", dificultat: "Fàcil" },
       { pregunta: "Quina és la capital del Japó?", opcions: ["Seül", "Tòquio", "Bangkok", "Pekín"], correcta: 1, pista: "Allotja els Jocs Olímpics del 2021", dificultat: "Fàcil" },
@@ -85,13 +125,21 @@
     let tempsRestant = 10;
     let preguntaActual;
 
+    function iniciarUsuari() {
+      nomUsuari = "";
+      while (!nomUsuari) {
+        nomUsuari = prompt("Escriu el teu nom per començar:");
+      }
+      iniciarJoc();
+    }
+
     function barrejarArray(array) {
       return array.sort(() => Math.random() - 0.5);
     }
 
     function iniciarJoc() {
       puntuacio = 0;
-      document.getElementById("score").textContent = puntuacio;
+      document.getElementById("current-score").textContent = `Puntuació: ${puntuacio}`;
       preguntesAleatories = barrejarArray([...preguntes]);
       mostrarPregunta();
     }
@@ -103,8 +151,7 @@
 
       preguntaActual = preguntesAleatories.shift();
       if (!preguntaActual) {
-        alert("Has acabat totes les preguntes! Puntuació final: " + puntuacio);
-        actualitzarScoreboard();
+        acabarPartida();
         return;
       }
 
@@ -113,15 +160,13 @@
       document.getElementById("hint-text").style.display = "none";
       document.getElementById("hint-text").textContent = preguntaActual.pista;
       document.getElementById("result").textContent = "";
-
-      const answersDiv = document.getElementById("answers");
-      answersDiv.innerHTML = "";
+      document.getElementById("answers").innerHTML = "";
 
       preguntaActual.opcions.forEach((opcio, index) => {
         const btn = document.createElement("button");
         btn.textContent = opcio;
         btn.onclick = () => verificarResposta(index);
-        answersDiv.appendChild(btn);
+        document.getElementById("answers").appendChild(btn);
       });
 
       iniciarTemps();
@@ -131,13 +176,12 @@
       pararTemps();
       if (index === preguntaActual.correcta) {
         puntuacio++;
-        document.getElementById("score").textContent = puntuacio;
+        document.getElementById("current-score").textContent = `Puntuació: ${puntuacio}`;
         document.getElementById("result").textContent = "✅ Correcte!";
         setTimeout(mostrarPregunta, 1000);
       } else {
         document.getElementById("result").textContent = "❌ Incorrecte! Tornes a començar.";
-        actualitzarScoreboard();
-        setTimeout(iniciarJoc, 2000);
+        acabarPartida();
       }
     }
 
@@ -152,8 +196,7 @@
         if (tempsRestant <= 0) {
           pararTemps();
           document.getElementById("result").textContent = "⏰ Temps esgotat!";
-          actualitzarScoreboard();
-          setTimeout(iniciarJoc, 2000);
+          acabarPartida();
         }
       }, 1000);
     }
@@ -166,17 +209,29 @@
       document.getElementById("timer").textContent = `Temps restant: ${tempsRestant}s`;
     }
 
+    function acabarPartida() {
+      pararTemps();
+      afegirScore();
+      document.getElementById("answers").innerHTML = "";
+      document.getElementById("question").textContent = "Partida acabada!";
+    }
+
+    function afegirScore() {
+      const fila = document.createElement("tr");
+      fila.innerHTML = `<td>${nomUsuari}</td><td>${puntuacio}</td>`;
+      document.getElementById("score-rows").appendChild(fila);
+    }
+
     function nextQuestion() {
       mostrarPregunta();
     }
 
-    function actualitzarScoreboard() {
-      const li = document.createElement("li");
-      li.textContent = `${nomUsuari}: ${puntuacio} punts`;
-      document.getElementById("scoreboard").appendChild(li);
+    function canviarUsuari() {
+      iniciarUsuari();
     }
 
-    iniciarJoc();
+    // Inici del joc
+    iniciarUsuari();
   </script>
 </body>
 </html>
