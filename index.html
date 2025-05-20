@@ -106,7 +106,7 @@
       </thead>
       <tbody id="score-rows"></tbody>
     </table>
-    <button onclick="canviarUsuari()">Canviar d'usuari</button>
+    <button onclick="canviarUsuari()">Canviar d'usuari i reiniciar</button>
   </div>
 
   <script>
@@ -217,9 +217,19 @@
     }
 
     function afegirScore() {
+      const taula = document.getElementById("score-rows");
+      const filesUsuari = [...taula.children].filter(
+        fila => fila.children[0].textContent === nomUsuari
+      );
+
+      if (filesUsuari.length >= 2) {
+        const filaAntiga = filesUsuari[0];
+        taula.removeChild(filaAntiga);
+      }
+
       const fila = document.createElement("tr");
       fila.innerHTML = `<td>${nomUsuari}</td><td>${puntuacio}</td>`;
-      document.getElementById("score-rows").appendChild(fila);
+      taula.appendChild(fila);
     }
 
     function nextQuestion() {
